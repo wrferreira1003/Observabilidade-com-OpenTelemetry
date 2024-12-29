@@ -1,0 +1,5 @@
+POST http://localhost:8081/process-cep
+
+{
+	"cep": "01310930"
+}

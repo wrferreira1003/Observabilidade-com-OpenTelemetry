@@ -1,0 +1,48 @@
+  services:
+    servico_a:
+      build:
+        context: ./servicoA # Caminho relativo para o diretório do Serviço A
+      ports:
+        - "8081:8081"
+      environment:
+        - PORT=8081
+        - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      command: ["./cloudrun"]
+      depends_on:
+        - otel-collector
+
+    servico_b:
+      build:
+        context: ./servicoB # Caminho relativo para o diretório do Serviço B
+      ports:
+        - "8080:8080"
+      environment:
+        - PORT=8080
+        - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      command: ["./cloudrun"]
+      depends_on:
+        - otel-collector
+
+    test:
+      build:
+        context: ./servicoB
+        target: builder # Use a etapa "builder" que contém o Go
+      volumes:
+        - .:/app
+      working_dir: /app
+      command: ["go", "test", "./...", "-v", "-cover"]
+
+    otel-collector:
+      image: otel/opentelemetry-collector:latest
+      ports:
+        - "4317:4317" # Porta para comunicação OTLP gRPC
+        - "55681:55681" # Porta para debugging
+      command: ["--config=/etc/otel-collector-config.yml"]
+      volumes:
+        - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+
+    zipkin:
+      image: openzipkin/zipkin:latest
+      ports:
+        - "9411:9411" # Porta do Zipkin
+
